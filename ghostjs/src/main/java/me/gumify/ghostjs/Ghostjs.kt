@@ -3,7 +3,10 @@ package me.gumify.ghostjs
 import android.annotation.SuppressLint
 import android.content.Context
 import android.webkit.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -52,7 +55,8 @@ class Ghostjs(private val context: Context) {
     private suspend fun evaluator(script: String): String? {
         var output: String? = null
         var isDone = false
-        webView.evaluateJavascript("""
+        CoroutineScope(Dispatchers.Main).launch {
+            webView.evaluateJavascript("""
             (function() {
                 try {
                     var __GHOST_DATA = (function() {
@@ -64,10 +68,11 @@ class Ghostjs(private val context: Context) {
                 }
             })();
         """.trimIndent()) {
-            try {
-                output = it
-            } catch (e: Exception) {}
-            isDone = true
+                try {
+                    output = it
+                } catch (e: Exception) {}
+                isDone = true
+            }
         }
         while (!isDone) {
             delay(100)
